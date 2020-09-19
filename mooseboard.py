@@ -1,7 +1,7 @@
 import os
 import json
 
-TOKEN = 'your-token-here'
+TOKEN = 'your_token_here'
 
 default_call = "?"
 
@@ -10,8 +10,9 @@ from discord.ext import commands
 import random
 
 def write_json(board_list, selected):
-    with open("selected.txt", "w") as outfile:
-        outfile.write(selected)
+    with open("selected.json", "w") as outfile:
+        json_object = json.dumps(selected, indent = 4)
+        outfile.write(json_object)
         outfile.close()
 
     with open("board.json", "w") as outfile:
@@ -40,10 +41,10 @@ except FileNotFoundError:
 global selected
 try:
     f = open('selected.txt') 
-    selected = f.read()
+    selected = json.load(f)
     f.close()
 except FileNotFoundError:
-    selected = ""
+    selected = {}
 
 bot = commands.Bot(command_prefix=default_call)
 
@@ -66,7 +67,11 @@ async def tasks(ctx, *args):
     if len(ctx.author.roles) > 1:
     # if name == '441578258602131456':
         global selected
-
+        if not selected.get(server, {}):
+            try:
+                selected[server] = list(list_of_boards[server][name].keys())[0]
+            except:
+                selected[server] = ""
         try:
             func = args[0]
         except:
@@ -90,7 +95,7 @@ async def tasks(ctx, *args):
                     if not list_of_boards.get(server, {}).get(name, {}):
                         list_of_boards[server][name] = {}
                     list_of_boards[server][name][value] = {}
-                    selected = value
+                    selected[server] = value
                     await ctx.send("```Created a new task board {0}.```".format(value))
                     write_json(list_of_boards, selected)
                 else:
@@ -105,7 +110,7 @@ async def tasks(ctx, *args):
                                 key_list = list(list_of_boards[server][name].keys())
                                 list_of_boards[server][name].pop(key_list[value - 1])
                                 await ctx.send("```Removed the task board '{0}'.```".format(key_list[value - 1]))
-                                selected = ""
+                                selected[server] = ""
                                 write_json(list_of_boards, selected)
                             else:
                                 await ctx.send("```Index does not exist!```")
@@ -115,26 +120,26 @@ async def tasks(ctx, *args):
                     await ctx.send("```The board name is not given.```")
 
             elif func == "sel":
-                if selected:
+                if selected[server]:
                     if value:
                         if list_of_boards.get(server, {}).get(name, {}):
                             if is_integer(value):
                                 value = int(value)
                                 if index_in_list(list_of_boards[server][name], value - 1):
                                     key_list = list(list_of_boards[server][name].keys())
-                                    selected = key_list[value - 1]
-                                    await ctx.send("```The selected board is {0}```".format(selected))
+                                    selected[server] = key_list[value - 1]
+                                    await ctx.send("```The selected[server] board is {0}```".format(selected[server]))
                                     write_json(list_of_boards, selected)
                                 else:
                                     await ctx.send("```Index does not exist!```")
 
             elif func == "add":
-                if selected:
+                if selected[server]:
                     if args:
                         if list_of_boards.get(server, {}).get(name, {}):
                             for value in args[1:]:
-                                list_of_boards[server][name][selected][value] = False
-                                await ctx.send("```Added the {0} to {1}```".format(value, selected))
+                                list_of_boards[server][name][selected[server]][value] = False
+                                await ctx.send("```Added the {0} to {1}```".format(value, selected[server]))
                             write_json(list_of_boards, selected)
                         else:
                             await ctx.send("```The task list is empty.```")
@@ -154,16 +159,16 @@ async def tasks(ctx, *args):
                     await ctx.send("```Empty.```")
 
             elif func == "check":
-                if selected:
+                if selected[server]:
                     if value:
-                        if list_of_boards.get(server, {}).get(name, {}).get(selected, {}):
+                        if list_of_boards.get(server, {}).get(name, {}).get(selected[server], {}):
                             for value in args[1:]:
                                 if is_integer(value):
                                     value = int(value)
-                                    if index_in_list(list_of_boards[server][name][selected], value - 1):
-                                        if not value > len(list_of_boards[server][name][selected].keys()) and not value <= 0:
-                                            key_list = list(list_of_boards[server][name][selected].keys())
-                                            list_of_boards[server][name][selected][key_list[value - 1]] = True
+                                    if index_in_list(list_of_boards[server][name][selected[server]], value - 1):
+                                        if not value > len(list_of_boards[server][name][selected[server]].keys()) and not value <= 0:
+                                            key_list = list(list_of_boards[server][name][selected[server]].keys())
+                                            list_of_boards[server][name][selected[server]][key_list[value - 1]] = True
                                             await ctx.send("```{0} is checked.```".format(key_list[value - 1]))
                                         else:
                                             await ctx.send("```The task list is empty.```")
@@ -178,17 +183,17 @@ async def tasks(ctx, *args):
                     await ctx.send("```A list is not selected.```")
 
             elif func == "uncheck":
-                if selected:
+                if selected[server]:
                     if value:
                         if list_of_boards.get(server, {}).get(name, {}):
-                            if list_of_boards.get(server, {}).get(name, {}).get(selected, {}):
+                            if list_of_boards.get(server, {}).get(name, {}).get(selected[server], {}):
                                 for value in args[1:]:
                                     if is_integer(value):
                                         value = int(value)
-                                        if index_in_list(list_of_boards[server][name][selected], value - 1):
-                                            if not value > len(list_of_boards[server][name][selected].keys()) and not value <= 0:
-                                                key_list = list(list_of_boards[server][name][selected].keys())
-                                                list_of_boards[server][name][selected][key_list[value - 1]] = False
+                                        if index_in_list(list_of_boards[server][name][selected[server]], value - 1):
+                                            if not value > len(list_of_boards[server][name][selected[server]].keys()) and not value <= 0:
+                                                key_list = list(list_of_boards[server][name][selected[server]].keys())
+                                                list_of_boards[server][name][selected[server]][key_list[value - 1]] = False
                                                 await ctx.send("```{0} is unchecked.```".format(key_list[value - 1]))
                                             else:
                                                 await ctx.send("```The task list is empty.```")
@@ -203,17 +208,17 @@ async def tasks(ctx, *args):
                     await ctx.send("```A list is not selected.```")
             
             elif func == "pop":
-                if selected:
+                if selected[server]:
                     if value:
                         if list_of_boards.get(server, {}).get(name, {}):
-                            if list_of_boards.get(server, {}).get(name, {}).get(selected, {}):
+                            if list_of_boards.get(server, {}).get(name, {}).get(selected[server], {}):
                                 for value in args[1:]:
                                     if is_integer(value):
                                         value = int(value)
-                                        if index_in_list(list_of_boards[server][name][selected], value - 1):
-                                            if not value > len(list_of_boards[server][name][selected].keys()) and not value <= 0:
-                                                key_list = list(list_of_boards[server][name][selected].keys())
-                                                list_of_boards[server][name][selected].pop(key_list[value - 1])
+                                        if index_in_list(list_of_boards[server][name][selected[server]], value - 1):
+                                            if not value > len(list_of_boards[server][name][selected[server]].keys()) and not value <= 0:
+                                                key_list = list(list_of_boards[server][name][selected[server]].keys())
+                                                list_of_boards[server][name][selected[server]].pop(key_list[value - 1])
                                                 await ctx.send("```{0} is poped.```".format(key_list[value - 1]))
                                             else:
                                                 await ctx.send("```The task list is empty.```")
@@ -227,22 +232,23 @@ async def tasks(ctx, *args):
 
             elif func == "list":
                 if list_of_boards.get(server, {}).get(name, {}):
-                    title = "**__{0}__**".format(selected) + "\n"
-
-                    if len(list_of_boards[server][name][selected].keys()) != 0:
-                        final_string = ""
-                        for key in list_of_boards[server][name][selected]:
-                            response = '{0} {1}'
-                            check = "[ ]"
-                            if list_of_boards.get(server, {}).get(name, {})[selected][key]:
-                                check = "[X]"
-                            final_string += response.format(check, key) + " \n"
-                        final_string = '```' + final_string + '```'
-                        await ctx.send(title + final_string)
-                        write_json(list_of_boards, selected)
+                    title = "**__{0}__**".format(selected[server]) + "\n"
+                    if selected[server]:
+                        if len(list_of_boards[server][name][selected[server]].keys()) != 0:
+                            final_string = ""
+                            for key in list_of_boards[server][name][selected[server]]:
+                                response = '{0} {1}'
+                                check = "[ ]"
+                                if list_of_boards.get(server, {}).get(name, {})[selected[server]][key]:
+                                    check = "[X]"
+                                final_string += response.format(check, key) + " \n"
+                            final_string = '```' + final_string + '```'
+                            await ctx.send(title + final_string)
+                            write_json(list_of_boards, selected)
+                        else:
+                            await ctx.send(title + "```The task list is empty.```")
                     else:
-                        await ctx.send(title + "```The task list is empty.```")
-
+                        await ctx.send("```A list is not selected.```")
                 else:
                     await ctx.send("```The board list is empty!```")
 
