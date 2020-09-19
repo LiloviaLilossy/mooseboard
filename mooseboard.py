@@ -1,7 +1,7 @@
 import os
 import json
 
-TOKEN = 'NzU0NTcyMzk0NzI2ODE3ODUz.X12sTg.vbT0VQ-gP9M8Zq88qSou8B-xsk4'
+TOKEN = 'your-token-here'
 
 default_call = "?"
 
