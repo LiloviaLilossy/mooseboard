@@ -6,17 +6,15 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 import discord
 from discord.ext import commands
 
-from cogs import greetings, facts, stats, python, basement
+# from cogs import greetings, facts, stats, python, basement
+cogs = ["cogs.greetings", "cogs.facts", "cogs.stats", "cogs.python", "cogs.basement"]
 
-bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"))
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
 if __name__ == "__main__":
-    intents = discord.Intents.default()
-    intents.members = True
-    greetings.setup(bot)
-    facts.setup(bot)
-    stats.setup(bot)
-    python.setup(bot)
-    basement.setup(bot)
+    for cog in cogs:
+        bot.load_extension(cog)
 
-bot.run(TOKEN)
+    bot.run(TOKEN)
